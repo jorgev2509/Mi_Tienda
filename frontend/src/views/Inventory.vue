@@ -1,0 +1,10 @@
+<script setup>
+import { onMounted, ref } from 'vue'; import api from '../api'
+const products=ref([]), movements=ref([]), error=ref(''), form=ref({product_id:null,movement_type:'purchase',quantity:1,note:'',reference:''})
+const types=[{title:'Compra / entrada',value:'purchase'},{title:'Inventario inicial',value:'initial'},{title:'Ajuste de entrada',value:'adjustment_in'},{title:'Ajuste de salida',value:'adjustment_out'}]
+async function load(){try{[products.value,movements.value]=await Promise.all([api.get('/products').then(r=>r.data),api.get('/inventory/movements').then(r=>r.data)])}catch(e){error.value=e.response?.data?.detail}}
+async function save(){try{await api.post('/inventory/movements',form.value);form.value={product_id:null,movement_type:'purchase',quantity:1,note:'',reference:''};await load()}catch(e){error.value=e.response?.data?.detail}}
+onMounted(load)
+</script>
+<template><h1 class="mb-5">Inventario</h1><v-alert v-if="error" type="error" closable class="mb-4">{{error}}</v-alert><v-row><v-col cols="12" md="4"><v-card title="Registrar movimiento" class="pa-4"><v-card-text><v-select v-model="form.product_id" :items="products" item-title="name" item-value="id" label="Producto"/><v-select v-model="form.movement_type" :items="types" label="Tipo"/><v-text-field v-model.number="form.quantity" type="number" label="Cantidad"/><v-text-field v-model="form.reference" label="Referencia / documento"/><v-textarea v-model="form.note" label="Nota" rows="2"/></v-card-text><v-btn block color="primary" @click="save">Registrar</v-btn></v-card></v-col><v-col cols="12" md="8"><v-card title="Últimos movimientos"><v-table><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Referencia</th></tr></thead><tbody><tr v-for="m in movements" :key="m.id"><td>{{new Date(m.created_at).toLocaleString()}}</td><td>{{products.find(p=>p.id===m.product_id)?.name}}</td><td>{{m.movement_type}}</td><td>{{m.quantity}}</td><td>{{m.reference}}</td></tr></tbody></v-table></v-card></v-col></v-row></template>
+

@@ -1,0 +1,9 @@
+<script setup>
+import { onMounted, ref } from 'vue'; import api from '../api'
+const products=ref([]), dialog=ref(false), error=ref(''), form=ref({sku:'',name:'',sale_price:0,cost:0,tax_rate:0})
+async function load(){ try{ products.value=(await api.get('/products')).data }catch(e){error.value=e.response?.data?.detail} }
+async function save(){ try{await api.post('/products',form.value);dialog.value=false;form.value={sku:'',name:'',sale_price:0,cost:0,tax_rate:0};await load()}catch(e){error.value=e.response?.data?.detail} }
+onMounted(load)
+</script>
+<template><div class="d-flex justify-space-between mb-5"><h1>Productos</h1><v-btn color="primary" prepend-icon="mdi-plus" @click="dialog=true">Nuevo producto</v-btn></div><v-alert v-if="error" type="error" closable class="mb-4">{{error}}</v-alert><v-card><v-table><thead><tr><th>SKU</th><th>Producto</th><th>Precio</th><th>Costo</th><th>Impuesto</th><th>Existencia</th></tr></thead><tbody><tr v-for="p in products" :key="p.id"><td>{{p.sku}}</td><td>{{p.name}}</td><td>${{p.sale_price}}</td><td>${{p.cost}}</td><td>{{p.tax_rate}}%</td><td><v-chip :color="Number(p.stock)>0?'success':'error'">{{p.stock}}</v-chip></td></tr></tbody></v-table></v-card><v-dialog v-model="dialog" max-width="600"><v-card title="Nuevo producto" class="pa-4"><v-card-text><v-text-field v-model="form.sku" label="SKU"/><v-text-field v-model="form.name" label="Nombre"/><v-text-field v-model.number="form.sale_price" type="number" label="Precio de venta"/><v-text-field v-model.number="form.cost" type="number" label="Costo"/><v-text-field v-model.number="form.tax_rate" type="number" label="Impuesto %"/></v-card-text><v-card-actions><v-spacer/><v-btn @click="dialog=false">Cancelar</v-btn><v-btn color="primary" @click="save">Guardar</v-btn></v-card-actions></v-card></v-dialog></template>
+
